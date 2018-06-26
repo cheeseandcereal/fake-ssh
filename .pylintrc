@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+disable=W0703, C0301, C0325, R0913
+
+[TYPECHECK]
+ignored-classes=_socketobject

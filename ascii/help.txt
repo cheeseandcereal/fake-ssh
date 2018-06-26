@@ -1,0 +1,22 @@
+Someone like you shouldn't need help!
+.----------------------.
+| |'-.                 |
+| |   '.               |
+| |     '.  .------.   |
+| |    _'  /  .--.  \  |
+| |    \  |__|    |  | |
+| |-'\  \        /  /  |
+|     \  \      /  /   |
+|      \-'     /  /    |
+|             |  |     |
+|             |__|     |
+|              __      |
+|             |__|     |
+'----------------------'
+
+Supported Commands:
+sudo <cmd>
+cd | cat | ls | help
+rm | pwd | whoami
+
+(And more!)
