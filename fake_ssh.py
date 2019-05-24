@@ -112,7 +112,7 @@ def start_server():
             transport = paramiko.Transport(client)
             transport.add_server_key(HOST_KEY)
             # Change banner to appear legit on nmap (or other network) scans
-            transport.local_version = "SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.4"
+            transport.local_version = "SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3"
             server = FakeSshServer()
             try:
                 transport.start_server(server=server)
