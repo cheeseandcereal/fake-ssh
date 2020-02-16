@@ -86,6 +86,72 @@ class FakeSshServer(paramiko.ServerInterface):
         return True
 
 
+def handle_connection(client, addr):
+    """Handle a new ssh connection"""
+    LOG.write("\n\nConnection from: " + addr[0] + "\n")
+    print('Got a connection!')
+    try:
+        transport = paramiko.Transport(client)
+        transport.add_server_key(HOST_KEY)
+        # Change banner to appear legit on nmap (or other network) scans
+        transport.local_version = "SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3"
+        server = FakeSshServer()
+        try:
+            transport.start_server(server=server)
+        except paramiko.SSHException:
+            print('*** SSH negotiation failed.')
+            raise Exception("SSH negotiation failed")
+        # wait for auth
+        chan = transport.accept(20)
+        if chan is None:
+            print('*** No channel.')
+            raise Exception("No channel")
+
+        server.event.wait(10)
+        if not server.event.is_set():
+            print('*** Client never asked for a shell.')
+            raise Exception("No shell request")
+
+        try:
+            chan.send("Welcome to the my control server\r\n\r\n")
+            run = True
+            while run:
+                chan.send("$ ")
+                command = ""
+                while not command.endswith("\r"):
+                    transport = chan.recv(1024)
+                    # Echo input to psuedo-simulate a basic terminal
+                    chan.send(transport)
+                    command += transport.decode("utf-8")
+
+                chan.send("\r\n")
+                command = command.rstrip()
+                LOG.write("$ " + command + "\n")
+                print(command)
+                if command == "exit":
+                    run = False
+                else:
+                    handle_cmd(command, chan)
+
+        except Exception as err:
+            print('!!! Exception: {}: {}'.format(err.__class__, err))
+            traceback.print_exc()
+            try:
+                transport.close()
+            except Exception:
+                pass
+
+        chan.close()
+
+    except Exception as err:
+        print('!!! Exception: {}: {}'.format(err.__class__, err))
+        traceback.print_exc()
+        try:
+            transport.close()
+        except Exception:
+            pass
+
+
 def start_server():
     """Init and run the ssh server"""
     try:
@@ -97,6 +163,7 @@ def start_server():
         traceback.print_exc()
         sys.exit(1)
 
+    threads = []
     while True:
         try:
             sock.listen(100)
@@ -105,69 +172,12 @@ def start_server():
         except Exception as err:
             print('*** Listen/accept failed: {}'.format(err))
             traceback.print_exc()
+        new_thread = threading.Thread(target=handle_connection, args=(client, addr))
+        new_thread.start()
+        threads.append(new_thread)
 
-        LOG.write("\n\nConnection from: " + addr[0] + "\n")
-        print('Got a connection!')
-        try:
-            transport = paramiko.Transport(client)
-            transport.add_server_key(HOST_KEY)
-            # Change banner to appear legit on nmap (or other network) scans
-            transport.local_version = "SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3"
-            server = FakeSshServer()
-            try:
-                transport.start_server(server=server)
-            except paramiko.SSHException:
-                print('*** SSH negotiation failed.')
-                raise Exception("SSH negotiation failed")
-            # wait for auth
-            chan = transport.accept(20)
-            if chan is None:
-                print('*** No channel.')
-                raise Exception("No channel")
-
-            server.event.wait(10)
-            if not server.event.is_set():
-                print('*** Client never asked for a shell.')
-                raise Exception("No shell request")
-
-            try:
-                chan.send("Welcome to the my control server\r\n\r\n")
-                run = True
-                while run:
-                    chan.send("$ ")
-                    command = ""
-                    while not command.endswith("\r"):
-                        transport = chan.recv(1024)
-                        # Echo input to psuedo-simulate a basic terminal
-                        chan.send(transport)
-                        command += transport.decode("utf-8")
-
-                    chan.send("\r\n")
-                    command = command.rstrip()
-                    LOG.write("$ " + command + "\n")
-                    print(command)
-                    if command == "exit":
-                        run = False
-                    else:
-                        handle_cmd(command, chan)
-
-            except Exception as err:
-                print('!!! Exception: {}: {}'.format(err.__class__, err))
-                traceback.print_exc()
-                try:
-                    transport.close()
-                except Exception:
-                    pass
-
-            chan.close()
-
-        except Exception as err:
-            print('!!! Exception: {}: {}'.format(err.__class__, err))
-            traceback.print_exc()
-            try:
-                transport.close()
-            except Exception:
-                pass
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == "__main__":
