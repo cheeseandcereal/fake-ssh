@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Fake SSH Server Utilizing Paramiko"""
+import argparse
 import threading
 import socket
 import sys
@@ -8,7 +9,7 @@ import paramiko
 
 LOG = open("logs/log.txt", "a")
 HOST_KEY = paramiko.RSAKey(filename='keys/private.key')
-PORT = 22
+SSH_BANNER = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1"
 
 
 def handle_cmd(cmd, chan):
@@ -94,7 +95,7 @@ def handle_connection(client, addr):
         transport = paramiko.Transport(client)
         transport.add_server_key(HOST_KEY)
         # Change banner to appear legit on nmap (or other network) scans
-        transport.local_version = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1"
+        transport.local_version = SSH_BANNER
         server = FakeSshServer()
         try:
             transport.start_server(server=server)
@@ -152,12 +153,12 @@ def handle_connection(client, addr):
             pass
 
 
-def start_server():
+def start_server(port, bind):
     """Init and run the ssh server"""
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('', PORT))
+        sock.bind((bind, port))
     except Exception as err:
         print('*** Bind failed: {}'.format(err))
         traceback.print_exc()
@@ -181,4 +182,8 @@ def start_server():
 
 
 if __name__ == "__main__":
-    start_server()
+    parser = argparse.ArgumentParser(description='Run a fake ssh server')
+    parser.add_argument("--port", "-p", help="The port to bind the ssh server to (default 22)", default=22, type=int, action="store")
+    parser.add_argument("--bind", "-b", help="The address to bind the ssh server to", default="", type=str, action="store")
+    args = parser.parse_args()
+    start_server(args.port, args.bind)
