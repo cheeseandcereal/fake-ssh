@@ -74,7 +74,9 @@ class FakeSshServer(paramiko.ServerInterface):
 
     def check_auth_password(self, username, password):
         # Accept all passwords as valid by default
-        return paramiko.AUTH_SUCCESSFUL
+        print(password)
+        if password == args.passwd:
+            return paramiko.AUTH_SUCCESSFUL
 
     def get_allowed_auths(self, username):
         return 'password'
@@ -185,5 +187,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a fake ssh server')
     parser.add_argument("--port", "-p", help="The port to bind the ssh server to (default 22)", default=22, type=int, action="store")
     parser.add_argument("--bind", "-b", help="The address to bind the ssh server to", default="", type=str, action="store")
+    parser.add_argument("--passwd","-pw", help="Set a password",default="password",type=str, action="store")
     args = parser.parse_args()
     start_server(args.port, args.bind)
