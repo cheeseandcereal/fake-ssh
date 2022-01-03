@@ -9,7 +9,7 @@ import paramiko
 
 LOG = open("logs/log.txt", "a")
 HOST_KEY = paramiko.RSAKey(filename='keys/private.key')
-SSH_BANNER = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1"
+SSH_BANNER = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.3"
 
 
 def handle_cmd(cmd, chan):
