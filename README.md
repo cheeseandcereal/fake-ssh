@@ -18,11 +18,11 @@ Then simply run the file to start the server:
 
 Note: sudo is simply needed to bind to port 22, although this can be easily changed if desired (it will present a generic OpenSSH banner/fingerprint to network scanners to find regardless of the port)
 
-You can specify the port and address to bind to with the `-p` and `-b` flags:
+You can specify the port, the password and address to bind to with the `-p`, `-pw` and `-b` flags:
 
 ```sh
 # Run the server on port 12345, only listening on localhost
-./fake_ssh.py -p 12345 -b 127.0.0.1
+./fake_ssh.py -p 12345 -b 127.0.0.1 -pw password
 ```
 
 ![Scan](screenshots/nmap.png "Spoofed Banner")
